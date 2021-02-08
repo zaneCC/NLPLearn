@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score,confusion_matrix
 # %matplotlib inline
 
 # 导出只有糖尿病患者数据，用于构建后台患者数据
-PATH = '/Users/zhouzhan/to_github/NLP/Python/codes/sklearn/SymptomAnalysis/diabetes_data_upload.csv'
+PATH = '/Users/zhouzhan/Documents/to_github/NLPLearn/Python/sklearn/SymptomAnalysis/diabetes_data_upload.csv'
 
 dataset = pd.read_csv(PATH)
 
@@ -88,6 +88,7 @@ X_train = ss.fit_transform(X_train)
 X_test = ss.transform(X_test)
 
 # 逻辑回归
+print('------------- 逻辑回归')
 from sklearn.linear_model import LogisticRegression
 lg=LogisticRegression()
 lg.fit(X_train,y_train)
@@ -109,3 +110,49 @@ print(confusion_matrix(pre,y_test)) # 输出混淆矩阵
 print('------------- 打印报告')
 from sklearn.metrics import classification_report
 print(classification_report(pre,y_test))
+
+# 决策树预测
+print('------------- 决策树')
+X = dataset[['Polydipsia','sudden weight loss','partial paresis','Irritability','Polyphagia','Age','visual blurring']]
+y = dataset['class']
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size = 0.2,random_state=1)
+print(y_test.shape)
+
+from sklearn.tree import DecisionTreeClassifier
+model = DecisionTreeClassifier(criterion='entropy')
+model.fit(X_train, y_train)
+y_test_hat = model.predict(X_test)      # 测试数据
+
+print('------------- 训练数据的评价')
+# accuracies = cross_val_score(estimator=lg, X=X_test ,y=y_test,cv=10)
+accuracies = accuracy_score(y_test, y_test_hat)
+print("accuracy is {:.2f} %".format(accuracies.mean()*100))
+print("std is {:.2f} %".format(accuracies.std()*100))
+
+result = (y_test_hat == y_test)
+acc = np.mean(result)
+print('准确度: %.2f%%' % (100 * acc))
+
+# 过拟合：错误率
+depth = np.arange(1, 15)
+for d in depth:
+    clf = DecisionTreeClassifier(criterion='entropy', max_depth=d)
+    clf.fit(X_train, y_train)
+    y_test_hat = clf.predict(X_test)  # 测试数据
+    result = (y_test_hat == y_test)  # True则预测正确，False则预测错误
+    err = 1 - np.mean(result)
+    print(d, ' 错误率: %.2f%%' % (100 * err))
+
+
+# 随机森林预测
+print('------------- 随机森林')
+X = dataset[['Polydipsia','sudden weight loss','partial paresis','Irritability','Polyphagia','Age','visual blurring']]
+y = dataset['class']
+
+from sklearn.ensemble import RandomForestClassifier
+clf = RandomForestClassifier(n_estimators=200, criterion='entropy')
+clf.fit(X, y.ravel())
+y_hat = clf.predict(X)
+c = np.count_nonzero(y_hat == y)
+print ('\t预测正确数目：', c)
+print ('\t准确率: %.2f%%' % (100 * float(c) / float(len(y))))
